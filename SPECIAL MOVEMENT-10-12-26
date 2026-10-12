@@ -1,0 +1,118 @@
+UNITY C#: ATTACK & SPECIAL MOVE
+// MONO-RIGID
+// PLAYER GameObject need: Rigidbody2D, Collider2D, for the c# Script
+
+CONTROLS: A/D move | Space Jump (hold in air to glide) | LeftShift slide | J sword | K throw
+
+linearVelocity
+
+// code proper
+using UnityEngine;
+
+[RequireComponent(typeof(Rigidbody2D))]
+public class SpecialMoves : MonoBehaviour
+
+{
+	[Header("Movement")]
+	public float moveSpeed = 6f;
+	public float jumpForce = 12f;
+
+	[Header("Groud Check")]
+	public Transform groundCheck;
+	public float groundRadius = 0.2f;
+	public LayerMark groundLayer;
+
+	[Header("Slide")]
+	public float slideSpeed = 12f;
+	public float slideDuration = 0.36f;
+	public float slideCooldown = 0.6f;
+
+	[Header("Glide")]
+	public float glideGravityScale = 0.15f;
+	public float glideMaxFallSpeed = 2f;
+	
+	[Header("Sword Swing")]
+	public Transfrom swordPoint;
+	public float swordRadius = 0.6f;
+	public int swordDamage = 1;
+	public float swordDuration = 0.25f;
+	public LayerMask enemyLayer;
+
+	[Header("Throw")]
+	public GameObject projectilePrefab;
+	public Transform throwPoint;
+	public float throwCooldown = 0.4f;
+
+	private Rigidbody2D rb;
+	private float defaultGravity;
+	private int facing =1 // 1 = Right, -1 = Left
+	private bool isGrounded;
+	private bool isSliding;
+	private bool isAttacking;
+	private bool isGliding;
+	private float slideTimer, slideCdTimer, attackTimer, throwCdTimer;
+	private float horizontalInput;
+
+void Start()
+	{
+	rb = GetComponent<Rigidbody2D>();
+	defaultGravity = rb.gravityScale;
+	}
+	// Input + timers + one-shot actions live in Update functions
+void Update()
+
+	{
+	horizontalInput = Input.GetAxisRaw("Horizontal");
+	isGround = Physics2D.OverlapCircle(groundcheck.position, groundRadius, groundLayer);
+
+	TickTimers();
+	UpdateFacing();
+
+	// JUMP
+	if (Input.GetKeyDown(KeyCode.Space) && isGrounded && !isSliding)
+	{
+	rb.Velocity = new Vector2(rb.velocity.x, jumpForce);
+	}
+
+	//Glide: hold jump while falling
+	isGliding = Input.GetKey(KeyCode.Space) && !isGrounded && rb.velocity.y< 0f;
+
+	//Slide
+	if (Input.GetKeyDown(KeyCode.LeftShift) && isGrounded && !isSliding && slideCdTimer <= of)
+	{
+	isSliding = true;
+	slideTimer = slideDuiration;
+	slidecdTimer = slideCooldown;
+	}
+
+	//Sword Swing
+	if (Input.GetKeyDown(KeyCode.J) && !isAttacking && !isSliding)
+	{
+	  SwingSword();
+	}
+
+	//Throw
+	if (Inout.GetKeyDown(KeyCode.K) && throwCdTimer <= 0f && projectilePrefab != null)
+	{
+	  ThrowProjectile();
+	}
+     }
+
+//Physics changes live in FixedUpdate
+void FixedUpdate()
+	
+	{
+	// Horizontal Velocity: slide overrides normal movement
+	float xVelocity = isSliding? facing * slideSpeed : horizontalInput * moveSpeed;
+	rb.velocity = new Vector2(xVelocity, rb.velocity.y);
+
+	// GLide = low gravity + capped fall speed. Otherwise restore normal grafvity.
+	rb.gravityScale = isGliding? glideGravityScale : defaultGravity;
+	if(isGliding && rb.velocity.y < glideMaxFallSpeed)
+
+		{
+		 =rb.velocity = new Vector2(rb.velocity.x - glideMaxFallSpeed);
+		}
+	}
+
+}
